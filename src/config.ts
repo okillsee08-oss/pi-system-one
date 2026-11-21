@@ -78,7 +78,7 @@ export function loadConfig(path = configPath()): SystemOneConfig {
       throw new Error(`Invalid MCP server entry: ${name}`);
     }
     if (!Array.isArray(server.allowedTools) || server.allowedTools.length === 0 || server.allowedTools.some((item) => typeof item !== "string" || !item.trim() || item === "*")) {
-      throw new Error("MCP server "${name}" must define a non-empty explicit allowedTools list. Wildcards are not supported.`);
+      throw new Error(`MCP server "${name}" must define a non-empty explicit allowedTools list. Wildcards are not supported.`);
     }
     if (server.transport === "stdio") {
       if (typeof server.command !== "string" || !server.command.trim()) throw new Error(`MCP stdio server "${name}" needs a command.`);
@@ -94,7 +94,7 @@ export function loadConfig(path = configPath()): SystemOneConfig {
       try { parsed = new URL(server.url); } catch { throw new Error(`MCP HTTP server "${name}" has an invalid URL.`); }
       if (!["https:", "http:"].includes(parsed.protocol)) throw new Error(`MCP HTTP server "${name}" must use HTTP or HTTPS.`);
     } else {
-      throw new Error("MCP server "${name}" transport must be either stdio or http.`);
+      throw new Error(`MCP server "${name}" transport must be either stdio or http.`);
     }
   }
 
