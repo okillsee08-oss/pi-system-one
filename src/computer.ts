@@ -24,8 +24,8 @@ interface BridgeResponse {
 export class PythonComputerBridge {
   constructor(private readonly config: SystemOneConfig) {}
 
-  async capture(): Promise<ScreenCapture> {
-    const result = await this.call({ action: "capture", max_side: this.config.computerUse.screenshotMaxSide });
+  async capture(signal?: AbortSignal): Promise<ScreenCapture> {
+    const result = await this.call({ action: "capture", max_side: this.config.computerUse.screenshotMaxSide }, signal);
     if (!result.image_base64 || !result.width || !result.height) throw new Error("Computer bridge returned an invalid screenshot.");
     return {
       image: { mimeType: "image/jpeg", base64: result.image_base64 },
@@ -34,34 +34,34 @@ export class PythonComputerBridge {
     };
   }
 
-  async execute(action: ComputerAction): Promise<void> {
+  async execute(action: ComputerAction, signal?: AbortSignal): Promise<void> {
     switch (action.action) {
       case "click":
       case "double_click":
         requireNormalizedPoint(action.x, action.y);
-        await this.call({ action: action.action, x: action.x, y: action.y });
+        await this.call({ action: action.action, x: action.x, y: action.y }, signal);
         return;
       case "type":
         requireNormalizedPoint(action.x, action.y);
         if (typeof action.text !== "string" || action.text.length < 1 || action.text.length > 500) {
           throw new Error("Refusing an empty or oversized typing action (limit: 500 characters).");
         }
-        await this.call({ action: "type", x: action.x, y: action.y, text: action.text });
+        await this.call({ action: "type", x: action.x, y: action.y, text: action.text }, signal);
         return;
       case "press":
         if (!action.key || !ALLOWED_KEYS.has(action.key.toUpperCase())) throw new Error("Key is not on the System One keyboard allowlist.");
-        await this.call({ action: "press", key: action.key.toUpperCase() });
+        await this.call({ action: "press", key: action.key.toUpperCase() }, signal);
         return;
       case "scroll":
         if (action.direction !== "up" && action.direction !== "down") throw new Error("Scroll direction must be up or down.");
-        await this.call({ action: "scroll", direction: action.direction, amount: Math.max(1, Math.min(8, Math.round(action.amount ?? 3))) });
+        await this.call({ action: "scroll", direction: action.direction, amount: Math.max(1, Math.min(8, Math.round(action.amount ?? 3))) }, signal);
         return;
       case "wait":
-        await this.call({ action: "wait" });
+        await this.call({ action: "wait" }, signal);
         return;
       case "open_url":
         validateHttpUrl(action.url);
-        await this.call({ action: "open_url", url: action.url });
+        await this.call({ action: "open_url", url: action.url }, signal);
         return;
       case "done":
         return;
@@ -72,17 +72,29 @@ export class PythonComputerBridge {
     }
   }
 
-  private async call(payload: Record<string, unknown>): Promise<BridgeResponse> {
+  private async call(payload: Record<string, unknown>, signal?: AbortSignal): Promise<BridgeResponse> {
+    if (signal?.aborted) throw new Error("Computer bridge operation was cancelled.");
     const python = this.config.computerUse.python;
     return new Promise((resolvePromise, reject) => {
       const child = spawn(python, [BRIDGE], { stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
       const stdout: Buffer[] = [];
       const stderr: Buffer[] = [];
       let size = 0;
+      const cleanup = () => {
+        clearTimeout(timeout);
+        signal?.removeEventListener("abort", abort);
+      };
+      const abort = () => {
+        child.kill("SIGKILL");
+        cleanup();
+        reject(new Error("Computer bridge operation was cancelled."));
+      };
       const timeout = setTimeout(() => {
         child.kill("SIGKILL");
+        cleanup();
         reject(new Error("Computer bridge timed out. Check Python and desktop accessibility/screen-recording permissions."));
       }, 20_000);
+      signal?.addEventListener("abort", abort, { once: true });
       child.stdout.on("data", (chunk: Buffer) => {
         size += chunk.length;
         if (size > 15 * 1024 * 1024) {
@@ -94,11 +106,11 @@ export class PythonComputerBridge {
       });
       child.stderr.on("data", (chunk: Buffer) => { if (Buffer.concat(stderr).length < 16_000) stderr.push(chunk); });
       child.on("error", (error) => {
-        clearTimeout(timeout);
+        cleanup();
         reject(new Error(`Could not start Python bridge (${python}): ${error.message}`));
       });
       child.on("close", (code) => {
-        clearTimeout(timeout);
+        cleanup();
         const output = Buffer.concat(stdout).toString("utf8").trim();
         if (code !== 0 || !output) {
           const details = Buffer.concat(stderr).toString("utf8").trim();
