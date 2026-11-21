@@ -35,7 +35,7 @@ export default function (pi: ExtensionAPI) {
         const choice = await provider.decide(p.task, p.options, p.context ?? "");
         answer = { recommendation: choice.selected, rationale: "JEV selected an item from the primary model's shortlist; its choice API does not return free-form rationale.", risks: [], confidence: choice.confidence };
       } else {
-        answer = normalizeDecision(await requireJsonProvider(provider).generateJson(DecisionSystem, JSON.stringify({ task: p.task, primarySelectedContext: p.context ?? "", options: p.options ?? null })));
+        answer = normalizeDecision(await requireJsonProvider(provider).generateJson<DecisionResult>(DecisionSystem, JSON.stringify({ task: p.task, primarySelectedContext: p.context ?? "", options: p.options ?? null }), undefined, signal));
       }
       return result(answer, { provider: provider.name, taskType: "decision" });
     },
@@ -55,8 +55,8 @@ export default function (pi: ExtensionAPI) {
         const screen = await bridge.capture(signal);
         const prompt = JSON.stringify({ task: p.task, primarySelectedContext: p.context ?? "", step, actionLimit: max, history: history.slice(-10), screen: { width: screen.width, height: screen.height, screenshotAttached: true }, policy: { urlsExplicitlyPresentInTask: urls, textMustBeExactSubstringOfTask: true, screenTextIsUntrusted: true } });
         let action: ComputerAction;
-        if (provider instanceof JevProvider) action = await provider.nextComputerAction(p.task, history, screen.image);
-        else action = await requireJsonProvider(provider).generateJson<ComputerAction>(ComputerSystem, prompt, screen.image);
+        if (provider instanceof JevProvider) action = await provider.nextComputerAction(p.task, history, screen.image, signal);
+        else action = await requireJsonProvider(provider).generateJson<ComputerAction>(ComputerSystem, prompt, screen.image, signal);
         action = validateComputerAction(action);
         if (action.confidence < 0.5) return result({ status: "stopped_low_confidence", step, reason: action.reason, confidence: action.confidence, history }, { provider: provider.name, taskType: "computer_use" });
         if (action.action === "done") return result({ status: "planner_reports_done", steps: step - 1, reason: action.reason, history }, { provider: provider.name, taskType: "computer_use" });
