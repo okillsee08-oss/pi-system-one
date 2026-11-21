@@ -1,0 +1,52 @@
+{
+  "name": "pi-system-one",
+  "version": "0.1.0",
+  "description": "Selective System One delegation for Pi: decisions, computer use, and MCP tools.",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "pi",
+    "pi-extension",
+    "system-one",
+    "computer-use",
+    "mcp",
+    "delegation",
+    "gemini",
+    "openai",
+    "local-models"
+  ],
+  "files": [
+    "src",
+    "python",
+    "README.md",
+    "LICENSE",
+    "system-one.example.json",
+    "docs"
+  ],
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/client": "^2.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "typescript": "^6.0.0",
+    "vitest": "^3.1.1"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  }
+}
