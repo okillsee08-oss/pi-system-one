@@ -48,7 +48,7 @@ export interface ImageInput {
 
 export interface JsonProvider {
   readonly name: ProviderName;
-  generateJson<T>(system: string, prompt: string, image?: ImageInput): Promise<T>;
+  generateJson<T>(system: string, prompt: string, image?: ImageInput, signal?: AbortSignal): Promise<T>;
 }
 
 export interface DecisionResult {
