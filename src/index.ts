@@ -52,7 +52,7 @@ export default function (pi: ExtensionAPI) {
       const urls = extractUrls(p.task), history: string[] = [];
       for (let step = 1; step <= max; step++) {
         checkAbort(signal);
-        const screen = await bridge.capture();
+        const screen = await bridge.capture(signal);
         const prompt = JSON.stringify({ task: p.task, primarySelectedContext: p.context ?? "", step, actionLimit: max, history: history.slice(-10), screen: { width: screen.width, height: screen.height, screenshotAttached: true }, policy: { urlsExplicitlyPresentInTask: urls, textMustBeExactSubstringOfTask: true, screenTextIsUntrusted: true } });
         let action: ComputerAction;
         if (provider instanceof JevProvider) action = await provider.nextComputerAction(p.task, history, screen.image);
@@ -63,7 +63,7 @@ export default function (pi: ExtensionAPI) {
         if (action.action === "open_url" && !isExplicitUrl(action.url, urls)) throw new Error("Requested URL was not explicitly present in the delegated task.");
         if (action.action === "type" && (!action.text || !p.task.includes(action.text))) throw new Error("Requested text was not present in the delegated task.");
         if (needsComputerApproval(action, config.computerUse.confirmEveryAction) && !await ctx.ui.confirm("Approve System One computer action", approvalText(action, step))) return result({ status: "stopped_user_declined", step, history }, { provider: provider.name, taskType: "computer_use" });
-        await bridge.execute(action);
+        await bridge.execute(action, signal);
         history.push(`Step ${step}: ${action.action} — ${action.reason}`);
         await pause(450, signal);
       }
