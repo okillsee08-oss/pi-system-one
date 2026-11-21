@@ -7,7 +7,7 @@ export class OpenAICompatibleProvider implements JsonProvider {
     this.name = name;
   }
 
-  async generateJson<T>(system: string, prompt: string, image?: ImageInput): Promise<T> {
+  async generateJson<T>(system: string, prompt: string, image?: ImageInput, signal?: AbortSignal): Promise<T> {
     const base = (this.settings.baseUrl ?? "").replace(/\/+$/, "");
     if (!base) throw new Error(`${this.name} provider needs a baseUrl in system-one.json.`);
     const apiKey = process.env[this.settings.apiKeyEnv]?.trim() ?? "";
@@ -33,7 +33,7 @@ export class OpenAICompatibleProvider implements JsonProvider {
           { role: "user", content: userContent },
         ],
       }),
-      signal: AbortSignal.timeout(this.timeoutMs),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(this.timeoutMs)]) : AbortSignal.timeout(this.timeoutMs),
     });
     const payload: any = await readJsonResponse(response, this.name);
     const content = payload?.choices?.[0]?.message?.content;
