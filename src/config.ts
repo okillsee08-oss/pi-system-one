@@ -7,7 +7,7 @@ const DEFAULTS: SystemOneConfig = {
   provider: "gemini",
   providers: {
     openai: { model: "gpt-4.1-mini", apiKeyEnv: "OPENAI_API_KEY", baseUrl: "https://api.openai.com/v1" },
-    gemini: { model: "gemini-2.5-flash", apiKeyEnv: "GEMINI_API_KEY" },
+    gemini: { model: "gemini-4-hydrogen", apiKeyEnv: "GEMINI_API_KEY" },
     jev: { model: "jev-1.14.0", apiKeyEnv: "TYPESAFE_API_KEY", baseUrl: "https://api.typesafe.ai/v1/systemone" },
     local: { model: "qwen2.5-vl-7b-instruct", apiKeyEnv: "LOCAL_MODEL_API_KEY", baseUrl: "http://127.0.0.1:1234/v1" },
   },
