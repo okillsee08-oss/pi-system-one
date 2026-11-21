@@ -64,7 +64,7 @@ export async function runMcpDelegation(input: {
         }
       }
       if (input.signal?.aborted) throw new Error("MCP delegation was cancelled.");
-      const call = await client.callTool({ name: tool.name, arguments: args });
+      const call = await client.callTool({ name: tool.name, arguments: args }, { timeout: input.config.requestTimeoutMs, signal: input.signal });
       const rendered = renderResult(call).slice(0, 7000);
       audit.push({ tool: tool.name, approved: true, result: rendered.slice(0, 1200) });
       history.push({ tool: tool.name, result: rendered });
