@@ -1,6 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import { loadConfig, resolveProviderName } from "./config.js";
+import { configPath, loadConfig, resolveProviderName } from "./config.js";
 import { createProvider, requireJsonProvider } from "./providers/index.js";
 import { JevProvider } from "./providers/jev.js";
 import { PythonComputerBridge, needsComputerApproval, validateComputerAction } from "./computer.js";
