@@ -43,7 +43,7 @@ export async function runMcpDelegation(input: {
         previousCalls: history,
         remainingCalls: limit - turn,
       });
-      const decision = await input.provider.generateJson<McpAgentDecision>(system, prompt);
+      const decision = await input.provider.generateJson<McpAgentDecision>(system, prompt, undefined, input.signal);
       if (decision.done === true) return { summary: bounded(decision.summary, "Delegated task completed."), calls: audit };
       if (typeof decision.toolName !== "string" || !allowed.includes(decision.toolName)) throw new Error(`System One selected a tool outside the configured allowlist: ${String(decision.toolName)}`);
       const tool = available.find((candidate) => candidate.name === decision.toolName);
